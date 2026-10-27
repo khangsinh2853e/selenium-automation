@@ -6,7 +6,7 @@
 #            mỗi khi có code được push lên nhánh main.
 # =====================================================================
 
-name: Selenium Heroku E2E CI | © 2026 by khangsinh2853e
+name: Selenium Heroku E2E CI
 
 on:
   push:
