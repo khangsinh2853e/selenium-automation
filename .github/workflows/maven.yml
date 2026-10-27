@@ -1,0 +1,59 @@
+# =====================================================================
+#  SELENIUM E2E PROJECT - CI PIPELINE
+#  © 2026 by khangsinh2853e
+# ---------------------------------------------------------------------
+#  Mục đích: Tự động chạy kịch bản kiểm thử giao diện bằng Selenium
+#            mỗi khi có code được push lên nhánh main.
+# =====================================================================
+
+name: Selenium Heroku E2E CI | © 2026 by khangsinh2853e
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test: # Đổi tên job từ build sang test cho đúng ngữ nghĩa
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # --- BƯỚC 1: Kéo source code từ repo về máy ảo ---
+      - name: Checkout repository
+        uses: actions/checkout@v4 
+
+      # --- BƯỚC 2: Cài đặt JDK ---
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17' # Dùng JDK 17 đồng bộ với cấu hình trong README của bạn
+          distribution: 'temurin'
+          cache: maven
+
+      # --- BƯỚC 3: Chạy Kiểm thử bằng Maven ---
+      - name: Run Selenium Tests
+        # Chỉ chạy phase 'test' thay vì 'package' vì ta không cần file .jar
+        run: mvn -B test --no-transfer-progress --file pom.xml
+
+      # --- BƯỚC 4: Upload Báo cáo kiểm thử (Test Reports) ---
+      # Bước này dùng if: always() để đảm bảo dù test case có rớt (Fail) 
+      # thì báo cáo lỗi vẫn được upload lên để bạn tải về xem nguyên nhân.
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-test-reports-${{ github.run_number }}
+          # Mặc định Maven Surefire plugin lưu kết quả test ở thư mục này
+          path: target/surefire-reports/
+          retention-days: 7
+          compression-level: 6
